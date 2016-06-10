@@ -2,15 +2,12 @@
 
 __author__ = 'astetson'
 
-import os
 import sys
 import uuid
 import time
 import serial
 import signal
-import sqlite3
-sys.path.insert(0, '%s/Desktop/weta/NFC_Callsheet' % os.environ['USERPROFILE'])
-import shellScriptBase
+sys.path.insert(0, './')
 import nfcCallsheetDB
 
 def signal_handler(signal, frame):
@@ -20,20 +17,9 @@ signal.signal(signal.SIGINT, signal_handler)
 
 class CallsheetHandler(object):
     def __init__(self):
-        self.comPort = 2
         self.callsheetDB = nfcCallsheetDB.CallsheetDatabase()
         print("Starting serial connection.")
-        self.serialConnection = self._startSerialConnection()
-
-    def _startSerialConnection(self):
-        try:
-            serialConnection = serial.Serial(self.comPort, baudrate=9600)
-        except serial.SerialException as e:
-            msg = "No Serial connection found. Is the NFC Reader plugged in?\n"\
-                  "Is it being used by another program?"
-            raise type(e)(str(e) + msg).with_traceback(sys.exc_info()[2])
-        time.sleep(2)
-        return serialConnection
+        self.serialConnection = SerialConnection().connection
 
     def _monitorNfcForTagRead(self):
         '''Monitor the serial connection for tag information'''
@@ -111,7 +97,6 @@ class CallsheetHandler(object):
                 if currentLine.split(":")[0] == "num_ndef_records":
                     numNdefRecords = int(currentLine.split(":")[1])
                 elif currentLine.split(":")[0] == "payload":
-                    print("ALLEN: Currentline: %s" % currentLine)
                     try:
                       key = currentLine.split(":")[1]
                       val = currentLine.split(":")[2]
@@ -151,6 +136,12 @@ class CallsheetHandler(object):
             raise ValueError("No record with that uuid (%s) found." % uuid)
         return callsheetRecord
 
+    def getRecordByName(self, name):
+        callsheetRecord = self.callsheetDB.getByName(name)
+        if not callsheetRecord:
+            raise ValueError("No record with that name (%s) found." % name)
+        return callsheetRecord
+
     def readTag(self):
         print("-> Listening for NDEF data.")
         # Signal for a tag Read
@@ -173,3 +164,30 @@ class CallsheetHandler(object):
         writeSignal = b":new:"
         self.serialConnection.write(writeSignal)
         self._monitorNfcForTagWrite(uuid)
+
+class SerialConnection:
+    class __SerialConnection:
+        def __init__(self):
+            self.comPort = 2
+            self.connection = self._startSerialConnection()
+
+        def _startSerialConnection(self):
+            try:
+                serialConnection = serial.Serial(self.comPort, baudrate=9600)
+            except serial.SerialException as e:
+                msg = "No Serial connection found. Is the NFC Reader plugged in?\n"\
+                      "Is it being used by another program?"
+                raise type(e)(str(e) + msg).with_traceback(sys.exc_info()[2])
+            time.sleep(2)
+            return serialConnection
+
+        def __del__(self):
+            print("Closing serial connection.")
+            self.connection.close()
+
+    instance = None
+    def __init__(self):
+        if not SerialConnection.instance:
+            SerialConnection.instance = SerialConnection.__SerialConnection()
+    def __getattr__(self, name):
+        return getattr(self.instance, name)

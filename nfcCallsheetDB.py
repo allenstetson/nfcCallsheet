@@ -7,7 +7,7 @@ import time
 import uuid
 import sqlite3
 
-DB_LOCATION = '%s/Desktop/weta/NFC_Callsheet/callsheet.db' % os.environ['USERPROFILE']
+DB_LOCATION = './callsheet.db'
 
 def dict_factory(cursor, row):
     d = {}
@@ -37,6 +37,15 @@ class CallsheetDatabase(object):
         connection.commit()
         connection.close()
 
+    def _fetchOneDBCmd(self, command):
+        connection = sqlite3.connect(DB_LOCATION)
+        connection.row_factory = dict_factory
+        cur = connection.cursor()
+        cur.execute(command)
+        record = cur.fetchone()
+        connection.close()
+        return record
+
     def create(self, callsheetRecord):
         if not 'uuid' in callsheetRecord.keys():
             raise ValueError("Record for creation must contain a UUID.")
@@ -49,19 +58,18 @@ class CallsheetDatabase(object):
     def update(self, callsheetRecord):
         for key in callsheetRecord.keys():
             updateCommand = "UPDATE callsheet SET %s='%s' WHERE uuid='%s'" %\
-                            (key, callsheetRecord[key], self['uuid'])
+                            (key, callsheetRecord[key], callsheetRecord['uuid'])
             self._executeDBCmd(updateCommand)
 
     def getByUuid(self, uuid):
-        connection = sqlite3.connect(DB_LOCATION)
-        connection.row_factory = dict_factory
-        cur = connection.cursor()
         loadCommand = "SELECT * FROM callsheet WHERE uuid = '%s'" % (uuid)
-        cur.execute(loadCommand)
-        record = cur.fetchone()
-        connection.close()
+        record = self._fetchOneDBCmd(loadCommand)
         return record
 
+    def getByName(self, name):
+        loadCommand = "SELECT * FROM callsheet WHERE name = '%s'" % (name)
+        record = self._fetchOneDBCmd(loadCommand)
+        return record
 
 class CallsheetRecord(dict):
     def __init__(self, **kwargs):
@@ -82,7 +90,11 @@ class CallsheetRecord(dict):
 
     def update(self, **kwargs):
         for (key, value) in kwargs.items():
+            '''
+            # This block won't work since we concatenated
+            # the UUID to appease the NFC/Arduino byte limit
             if key == "uuid":
                 #Validate UUID for v4 compliance
                 uuid.UUID(value, version=4)
+            '''
             self[key] = value
