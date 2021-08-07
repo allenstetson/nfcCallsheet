@@ -24,14 +24,9 @@ data to NFC stickers. In either case, it communicates with the PC portion
 which result in the update of the Callsheet.
 
 """
-__author__ = 'astetson'
-
-
 ###############################################################################
 # IMPORTS
 ###############################################################################
-import sys
-sys.path.insert(0, './')
 import shellScriptBase
 import nfcCallsheetSerial
 
@@ -39,6 +34,31 @@ import nfcCallsheetSerial
 __all__ = [
     "CallsheetCmdlineApp"
 ]
+__author__ = 'astetson'
+
+
+###############################################################################
+# IMPORTS
+###############################################################################
+def queryUserForData():
+    """Prompts the user for commandline input to be written to an NFC tag.
+
+    Returns:
+        dict: The keys and values that the user provided on the cmdline.
+
+    """
+    msg = ("Enter category:value to update - comma-separate multiple "
+           "values (name:Xample, recordType:example): ")
+    inputStr = input(msg)
+    if not ":" in inputStr:
+        print("INPUT ERROR: A colon-separated category and value "
+              "was expected. (such as family:canine)")
+        return {}
+    pairs = inputStr.split(',')
+    kwargs = {}
+    for pair in pairs:
+        kwargs[pair.split(":")[0].strip()] = pair.split(":")[1].strip()
+    return kwargs
 
 
 ###############################################################################
@@ -54,45 +74,29 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
     """
     def registerArgs(self):
         """Registers the commandline arguments for this tool."""
-        self.parser.add_argument('-read',
+        self.parser.add_argument(
+            '-read',
             help='read NFC Tag, and pull associated record from DB',
             action='store_true',
             )
 
-        self.parser.add_argument('-create',
+        self.parser.add_argument(
+            '-create',
             help='create a new NFC Tags/DB Record',
             action='store_true',
             )
 
-        self.parser.add_argument('-update',
+        self.parser.add_argument(
+            '-update',
             help='Updating an existing DB record/tag with new data',
             action='store_true',
             )
 
-        self.parser.add_argument('-assign',
+        self.parser.add_argument(
+            '-assign',
             help='assign a new NFC tag to an existing record',
             action='store_true',
             )
-
-    def _queryUserForData(self):
-        """Prompts the user for commandline input to be written to an NFC tag.
-
-        Returns:
-            dict: The keys and values that the user provided on the cmdline.
-
-        """
-        msg = "Enter category:value to update - comma-separate multiple "
-              "values (name:Xample, recordType:example): "
-        inputStr = input(msg)
-        if not ":" in inputStr:
-            print("INPUT ERROR: A colon-separated category and value "
-                  "was expected. (such as family:canine)"
-            return {}
-        pairs = inputStr.split(',')
-        kwargs={}
-        for pair in pairs:
-            kwargs[pair.split(":")[0].strip()] = pair.split(":")[1].strip()
-        return kwargs
 
     def run(self):
         """Runs the app.
@@ -141,7 +145,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
         record = callsheetHandler.getRecordFromTag()
         if not record:
             print("No record found that is associated with that tag.")
-            return
+            return None
         print("Record found:")
         print("---------- %s ----------" % record['name'])
         for key in record.keys():
@@ -161,7 +165,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
         an NFC tag.
 
         """
-        args = self._queryUserForData()
+        args = queryUserForData()
         callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
         callsheetHandler.createRecord(**args)
 
@@ -174,7 +178,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
         """
         record = self.readTag()
         print("------")
-        kwargs = self._queryUserForData()
+        kwargs = queryUserForData()
         record.update(kwargs)
         callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
         callsheetHandler.updateRecord(**record)
