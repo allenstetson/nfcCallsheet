@@ -96,6 +96,8 @@ class CallsheetHandler(object):
                     continue
                 if currentLine.split(":")[0] == "num_ndef_records":
                     numNdefRecords = int(currentLine.split(":")[1])
+                    msg = "Receiving {} records from the payload."
+                    print(msg.format(numNdefRecords)
                 elif currentLine.split(":")[0] == "payload":
                     try:
                       key = currentLine.split(":")[1]
