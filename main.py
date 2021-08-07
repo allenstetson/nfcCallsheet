@@ -27,8 +27,8 @@ which result in the update of the Callsheet.
 ###############################################################################
 # IMPORTS
 ###############################################################################
-import shellScriptBase
-import nfcCallsheetSerial
+from . import shellScriptBase
+from . import nfcCallsheetSerial
 
 
 __all__ = [
