@@ -2,9 +2,9 @@
 # Copyright (c) 2019 Allen Stetson, allen.stetson@gmail.com
 # All rights reserved. No duplication allowed.
 #
-# This file is part of DartBattle.
+# This file is part of nfdCallsheet.
 #
-# DartBattle may not be copied and/or distributed without the express
+# This software may not be copied and/or distributed without the express
 # permission of Allen Stetson.
 ###############################################################################
 """The main entry point for the python portion of nfcCallsheet, run on PC.
@@ -38,7 +38,7 @@ __author__ = 'astetson'
 
 
 ###############################################################################
-# IMPORTS
+# FUNCTIONS
 ###############################################################################
 def queryUserForData():
     """Prompts the user for commandline input to be written to an NFC tag.
