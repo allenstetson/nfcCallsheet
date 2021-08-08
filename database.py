@@ -8,7 +8,7 @@
 # permission of Allen Stetson.
 ###############################################################################
 """
-nfcCallsheetDB.py - Module containing all code that interacts w/ the database.
+database.py - Module containing all code that interacts w/ the database.
 
 Because this is a prototype, the chosen database is sqlite. In a production
 situation, this was likely be a full relational database hosted at an official
