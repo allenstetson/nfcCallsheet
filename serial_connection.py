@@ -8,7 +8,7 @@
 # permission of Allen Stetson.
 ###############################################################################
 """
-serial.py - Module containing logic that utilizes a serial COM port connection.
+serial_connection.py - All logic that utilizes a serial COM port connection.
 
 nfcCallsheet utilizes a serial connection over a COM port to an Arduino.
 Through this connection, serial commands are sent to the Arduino, preparing it
