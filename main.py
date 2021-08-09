@@ -27,8 +27,9 @@ which result in the update of the Callsheet.
 ###############################################################################
 # IMPORTS
 ###############################################################################
+# local imports:
 from . import shellScriptBase
-from . import nfcCallsheetSerial
+from . import serial_connection
 
 
 __all__ = [
@@ -141,7 +142,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
             dict: The record of keys and values that define this prop.
 
         """
-        callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
+        callsheetHandler = serial_connection.CallsheetHandler()
         record = callsheetHandler.getRecordFromTag()
         if not record:
             print("No record found that is associated with that tag.")
@@ -166,7 +167,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
 
         """
         args = queryUserForData()
-        callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
+        callsheetHandler = serial_connection.CallsheetHandler()
         callsheetHandler.createRecord(**args)
 
     def updateRecordFromTag(self):
@@ -180,7 +181,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
         print("------")
         kwargs = queryUserForData()
         record.update(kwargs)
-        callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
+        callsheetHandler = serial_connection.CallsheetHandler()
         callsheetHandler.updateRecord(**record)
         print("Update complete")
 
@@ -211,7 +212,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
             self._updateRecordWithSwipedTag(record)
         elif answer == "2":
             name = input("Enter name of desired record: ")
-            callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
+            callsheetHandler = serial_connection.CallsheetHandler()
             record = callsheetHandler.getRecordByName(name)
             print("Record for %s retrieved." % record['name'])
             self._updateRecordWithSwipedTag(record)
@@ -230,7 +231,7 @@ class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
 
         """
         print("Swipe new tag to associate with this record.")
-        callsheetHandler = nfcCallsheetSerial.CallsheetHandler()
+        callsheetHandler = serial_connection.CallsheetHandler()
         newTagId = callsheetHandler.getIdFromTag()
         record.update(nfcTagId=newTagId)
         callsheetHandler.updateRecord(**record)
