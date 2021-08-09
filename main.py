@@ -28,7 +28,7 @@ which result in the update of the Callsheet.
 # IMPORTS
 ###############################################################################
 # local imports:
-from . import shellScriptBase
+from . import shellscript_base
 from . import serial_connection
 
 
@@ -65,7 +65,7 @@ def queryUserForData():
 ###############################################################################
 # CLASSES
 ###############################################################################
-class CallsheetCmdlineApp(shellScriptBase.BaseShellScript):
+class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
     """A simple implementation of software that can read/write NFC tags.
 
     In production, this would be a standalone GUI or potentially a plugin to
