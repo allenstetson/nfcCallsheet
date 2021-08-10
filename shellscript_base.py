@@ -2,7 +2,7 @@
 # Copyright (c) 2019 Allen Stetson, allen.stetson@gmail.com
 # All rights reserved. No duplication allowed.
 #
-# This file is part of nfdCallsheet.
+# This file is part of nfcCallsheet.
 #
 # This software may not be copied and/or distributed without the express
 # permission of Allen Stetson.
