@@ -18,11 +18,12 @@ location.
 ###############################################################################
 # IMPORTS
 ###############################################################################
+# stdlib imports
 import os
-import time
-import uuid
 import sqlite3
 
+# local imports
+from . import records
 
 ###############################################################################
 # GLOBALS
@@ -33,7 +34,6 @@ DB_LOCATION = './callsheet.db'
 __all__ = [
     "dictFactory",
     "CallsheetDatabase",
-    "CallsheetRecord"
 ]
 __author__ = 'astetson'
 
@@ -71,7 +71,7 @@ class CallsheetDatabase(object):
         """Makes the database at the expected location if one doesn't exist."""
         if not os.path.isfile(DB_LOCATION):
             print("No DB found. Creating at {}".format(DB_LOCATION))
-            callsheetRecord = CallsheetRecord()
+            callsheetRecord = records.CallsheetRecord()
             qmarks = ",".join(callsheetRecord.keys())
             createCommand = "CREATE TABLE callsheet ({})".format(qmarks)
             print(createCommand)
@@ -103,6 +103,9 @@ class CallsheetDatabase(object):
 
         Args:
             command (str): The command to execute in sqlite3.
+
+        Returns:
+            dict: The record data from the database.
 
         """
         connection = sqlite3.connect(DB_LOCATION)
@@ -153,6 +156,12 @@ class CallsheetDatabase(object):
 
         The uuid is the primary key and would only ever match one record.
 
+        Args:
+            recordUuid (str): The unique ID for the record (primary key).
+
+        Returns:
+            dict: The record data from the database.
+
         """
         loadCommand = "SELECT * FROM callsheet WHERE uuid = '{}'"
         loadCommand = loadCommand.format(recordUuid)
@@ -171,46 +180,3 @@ class CallsheetDatabase(object):
         loadCommand = "SELECT * FROM callsheet WHERE name = '{}'".format(name)
         record = self._fetchOneDBCmd(loadCommand)
         return record
-
-class CallsheetRecord(dict):
-    """Object representing one record.
-
-    Contains all expected attributes for a complete record, and fills some of
-    those in with defaults.
-
-    Args:
-        **kwargs: Arbitrary keyword arguments, to be added to this record.
-
-    """
-    def __init__(self, **kwargs):
-        super(CallsheetRecord, self).__init__()
-        #self['uuid'] = str(uuid.uuid4())
-        self['uuid'] = str(uuid.uuid4())[:5] #To appease Arduino byte limit -- for now
-        self['name'] = ""
-        self['nfcTagId'] = ""
-        self['recordType'] = ""
-        self['scale'] = 1
-        self['location'] = "mbsStage26"
-        self['created'] = time.strftime('%Y-%m-%d %H:%M:%S')
-        self.update(**kwargs)
-
-    def loadFromDBRecord(self, record):
-        """Given a DB record, populate this object with its keys and values.
-
-        Args:
-            record (dict): The record from the database.
-
-        """
-        for keyname in record.keys():
-            self[keyname] = record[keyname]
-
-    def update(self, **kwargs):
-        """Update this object with new values, provided by the user.
-
-        Args:
-            **kwargs: Arbitrary keyword arguments, to be added or updated
-                within this record.
-
-        """
-        for (key, value) in kwargs.items():
-            self[key] = value

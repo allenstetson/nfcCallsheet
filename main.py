@@ -28,6 +28,7 @@ which result in the update of the Callsheet.
 # IMPORTS
 ###############################################################################
 # local imports:
+from . import records
 from . import shellscript_base
 from . import serial_connection
 
@@ -142,20 +143,18 @@ class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
             dict: The record of keys and values that define this prop.
 
         """
-        callsheetHandler = serial_connection.CallsheetHandler()
-        record = callsheetHandler.getRecordFromTag()
-        if not record:
-            print("No record found that is associated with that tag.")
-            return None
+        record = records.CallsheetRecord()
+        record.populateFromTag()
+        record.populateFromDatabase()
+
         print("Record found:")
-        print("---------- %s ----------" % record['name'])
+        print("---------- {} ----------".format(record['name']))
         for key in record.keys():
             if key == 'name':
                 continue
-            print("%10s: %s" % (key, record[key]))
+            print("{}: {}".format(key.rjust(13), record[key]))
         print("\n")
         return record
-
 
     def createTagAndRecord(self):
         """Writes record data to an NFC tag.
@@ -167,8 +166,9 @@ class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
 
         """
         args = queryUserForData()
-        callsheetHandler = serial_connection.CallsheetHandler()
-        callsheetHandler.createRecord(**args)
+        record = records.CallsheetRecord(**args)
+        record.writeToDatabase()
+        record.writeToTag()
 
     def updateRecordFromTag(self):
         """Allows a user to supplement an existing record with new data.
@@ -181,8 +181,7 @@ class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
         print("------")
         kwargs = queryUserForData()
         record.update(kwargs)
-        callsheetHandler = serial_connection.CallsheetHandler()
-        callsheetHandler.updateRecord(**record)
+        record.writeToDatabase()
         print("Update complete")
 
     def assignNewTagtoRecord(self):
@@ -212,9 +211,10 @@ class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
             self._updateRecordWithSwipedTag(record)
         elif answer == "2":
             name = input("Enter name of desired record: ")
-            callsheetHandler = serial_connection.CallsheetHandler()
-            record = callsheetHandler.getRecordByName(name)
-            print("Record for %s retrieved." % record['name'])
+            record = records.CallsheetRecord()
+            record['name'] = name
+            record.populateFromDatabaseByName()
+            print("Record for {} retrieved.".format(record['name']))
             self._updateRecordWithSwipedTag(record)
         else:
             print("I did not understand your input. Quitting.")
@@ -231,11 +231,13 @@ class CallsheetCmdlineApp(shellscript_base.BaseShellScript):
 
         """
         print("Swipe new tag to associate with this record.")
-        callsheetHandler = serial_connection.CallsheetHandler()
-        newTagId = callsheetHandler.getIdFromTag()
-        record.update(nfcTagId=newTagId)
-        callsheetHandler.updateRecord(**record)
-        callsheetHandler.writeTag(record['uuid'])
+        nfcSerialHandler = serial_connection.NfcSerialHandler()
+        newTagId = nfcSerialHandler.getTagIdFromTag()
+        kwargs = {"nfcTagId": newTagId}
+        record.update(**kwargs)
+        record.writeToDatabase()
+        record.writeToTag()
+
 
 ###############################################################################
 # EXECUTE

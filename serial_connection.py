@@ -21,15 +21,11 @@ connection in order to deliver records from those NFC tags after a scan.
 ###############################################################################
 # stdlib imports
 import sys
-import uuid
 import time
 import signal
 
 # extended imports
 import serial
-
-# local imports
-from . import database
 
 
 ###############################################################################
@@ -37,7 +33,7 @@ from . import database
 ###############################################################################
 __all__ = [
     "signalHandler",
-    "CallsheetHandler",
+    "NfcSerialHandler",
     "SerialConnection"
 ]
 __author__ = 'astetson'
@@ -68,14 +64,11 @@ signal.signal(signal.SIGINT, signalHandler)
 ###############################################################################
 # CLASSES
 ###############################################################################
-class CallsheetHandler(object):
+class NfcSerialHandler(object):
     """Object with methods to interact with the callsheet and the NFC reader.
 
     """
     def __init__(self):
-        #TODO: Remove all knowledge of a database from the handler and move
-        #  that logic into the record object.
-        self.callsheetDB = database.CallsheetDatabase()
         print("Starting serial connection.")
         self.serialConnection = SerialConnection().connection
 
@@ -226,26 +219,7 @@ class CallsheetHandler(object):
                     currentLine.split(":")[1]
         return ndefData
 
-    def createRecord(self, **kwargs):
-        """Creates a record in the database for an NFC tag that was scanned.
-
-        Args:
-            **kwargs: Arbitrary keyword args to write to the database.
-
-        """
-        #Read tag for its ID
-        tagId = self.getIdFromTag()
-        #Create database record with info
-        dbRecord = database.CallsheetRecord()
-        dbRecord['nfcTagId'] = tagId
-        for key, value in kwargs.items():
-            dbRecord[key] = value
-        #TODO: Move this logic into the Record object:
-        self.callsheetDB.create(dbRecord)
-        #Update tag with db record uuid
-        self.writeTag(dbRecord['uuid'])
-
-    def getIdFromTag(self):
+    def getTagIdFromTag(self):
         """Reads an NFC tag to derive its ID.
 
         Returns:
@@ -254,39 +228,6 @@ class CallsheetHandler(object):
         """
         ndefData = self.readTag()
         return ndefData['uid']
-
-    def getRecordFromTag(self):
-        """Reads an NFC tag and pulls the associated record from the DB.
-
-        Returns:
-            dict: The record associated with the scanned NFC tag.
-
-        """
-        ndefData = self.readTag()
-        if "uuid" not in ndefData:
-            raise ValueError("No UUID was found in this record.")
-        #TODO: Cast this as a CallsheetRecord before returning.
-        #TODO: Even better, use a populate method on a record object.
-        callsheetRecord = self.callsheetDB.getByUuid(ndefData['uuid'])
-        if not callsheetRecord:
-            msg = "No record with that uuid ({}) found."
-            raise ValueError(msg.format(uuid))
-        return callsheetRecord
-
-    def getRecordByName(self, name):
-        """Pulls the record associated with a given name from the DB.
-
-        Returns:
-            dict: The record associated with the provided name.
-
-        """
-        #TODO: Cast this as a CallsheetRecord before returning.
-        #TODO: Even better, use a populate method on a record object.
-        callsheetRecord = self.callsheetDB.getByName(name)
-        if not callsheetRecord:
-            msg = "No record with that name ({}) found.".format(name)
-            raise ValueError(msg)
-        return callsheetRecord
 
     def readTag(self):
         """Informs serial bus that we're waiting for NFC tag read, then wait.
@@ -309,20 +250,6 @@ class CallsheetHandler(object):
         msg = msg.format(ndefData['uid'], ndefData.keys())
         print(msg)
         return ndefData
-
-    def updateRecord(self, **kwargs):
-        """Update a record with provided attributes. One attr must be UUID.
-
-        Uses the provided ID to pull a record from the database, then update
-        that record with attributes provided.
-
-        """
-        if 'uuid' not in kwargs:
-            raise KeyError("A uuid must be provided when updating a record.")
-        callsheetRecord = database.CallsheetRecord()
-        callsheetRecord.update(**kwargs)
-        #TODO: Use an update method on a record object.
-        self.callsheetDB.update(callsheetRecord)
 
     def writeTag(self, recordUuid):
         """Inform the serial connection that we desire to write a new tag.
